@@ -1,5 +1,6 @@
 #!/usr/bin/perl
- $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;
+ $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
+ $ENV{'PERL_NET_HTTPS_SSL_SOCKET_CLASS'} = 'Net::SSL';
 
 # check_vmware_snapshots.pl
 # Extra packages required (URL given for vMA suitable RPMs)
@@ -81,8 +82,8 @@
 #    }
 
 # Example Output 1:
-# CRITICAL - Snapshot "Before update" (VM: 'vmHDX03-1') is 18.2 days old
-# Snapshot "20120914_rc2" (VM: 'win2k8r2') is 32.9 days old
+# CRITICAL - Snapshot "Before update" (VM: 'vmHDX03-1') is 18.2 hours old
+# Snapshot "20120914_rc2" (VM: 'win2k8r2') is 32.9 hours old
 #
 
 use strict;
@@ -125,13 +126,13 @@ my %opts = (
     warning => {
         type     => "=i",
         variable => "warning",
-        help     => "days after a snapshot is alarmed as warning.",
+        help     => "hours after a snapshot is alarmed as warning.",
         required => 1,
     },
     critical => {
         type     => "=i",
         variable => "critical",
-        help     => "days after a snapshot is alarmed as critical.",
+        help     => "hours after a snapshot is alarmed as critical.",
         required => 1,
     },
     blacklist => {
@@ -278,14 +279,14 @@ sub check_snapshot_age {
 		next if (isnotwhitelisted(\$whitelist,$vm_snap->{name}) and $match_snapshot_names );
 
         my $epoch_snap = str2time( $vm_snap->{createTime} );
-        my $days_snap  = sprintf("%0.1f", ( time() - $epoch_snap ) / 86400 );
-        my $status     = $np->check_threshold($days_snap);
+        my $hours_snap  = sprintf("%0.2f", ( time() - $epoch_snap ) / 3600 );
+        my $status     = $np->check_threshold($hours_snap);
         if ($status) {
             $np->add_message(
                 $status,
                 sprintf(
-                    "Snapshot \"%s\" (VM: '%s') is %d days old",
-                    $vm_snap->{name}, $vm_name, $days_snap
+                    "Snapshot \"%s\" (VM: '%s') is %.2f hours old",
+                    $vm_snap->{name}, $vm_name, $hours_snap
                 )
             );
             $badcount++;
